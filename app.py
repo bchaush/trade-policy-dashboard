@@ -1,5 +1,5 @@
 # =============================================================
-# TRADE POLICY EVENT STUDY - STREAMLIT DASHBOARD
+# TRADE POLICY EVENT STUDY - STREAMLIT DASHBOARD (Light Theme)
 # Run with: streamlit run app.py
 # =============================================================
 
@@ -7,7 +7,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import numpy as np
 
 # ---- PAGE CONFIG --------------------------------------------
@@ -21,69 +20,77 @@ st.set_page_config(
 # ---- CUSTOM CSS ---------------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'IBM Plex Sans', sans-serif;
-    }
-    .main { background-color: #0d1117; }
-    .stApp { background-color: #0d1117; color: #e6edf3; }
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
-    /* Sidebar */
+    .stApp { background-color: #f8f9fa; color: #1a1a2e; }
+    .main  { background-color: #f8f9fa; }
+
     [data-testid="stSidebar"] {
-        background-color: #161b22;
-        border-right: 1px solid #30363d;
+        background-color: #ffffff;
+        border-right: 1px solid #e0e0e0;
     }
 
-    /* Metric cards */
     [data-testid="metric-container"] {
-        background-color: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 8px;
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
         padding: 16px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
 
-    /* Headers */
-    h1, h2, h3 { font-family: 'IBM Plex Mono', monospace; color: #e6edf3; }
+    h1, h2, h3 { color: #1a1a2e; }
 
     .big-title {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 2rem;
-        font-weight: 500;
-        color: #58a6ff;
+        font-family: 'Inter', sans-serif;
+        font-size: 1.9rem;
+        font-weight: 700;
+        color: #1a1a2e;
         margin-bottom: 0;
     }
     .subtitle {
-        font-family: 'IBM Plex Sans', sans-serif;
         font-size: 0.95rem;
-        color: #8b949e;
+        color: #6b7280;
         margin-bottom: 2rem;
     }
     .section-header {
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.75rem;
-        color: #58a6ff;
+        font-size: 0.72rem;
+        color: #2563eb;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        border-bottom: 1px solid #21262d;
+        border-bottom: 2px solid #e5e7eb;
         padding-bottom: 8px;
         margin-bottom: 16px;
         margin-top: 32px;
     }
     .finding-card {
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-left: 3px solid #58a6ff;
-        border-radius: 6px;
-        padding: 14px 18px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-left: 4px solid #2563eb;
+        border-radius: 8px;
+        padding: 16px 20px;
         margin-bottom: 12px;
-        font-size: 0.88rem;
-        color: #c9d1d9;
-        line-height: 1.6;
+        font-size: 0.9rem;
+        color: #374151;
+        line-height: 1.7;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-    .tag-relief  { background:#1a3c2e; color:#3fb950; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-family:'IBM Plex Mono',monospace; }
-    .tag-tight   { background:#3c1a1a; color:#f85149; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-family:'IBM Plex Mono',monospace; }
-    .tag-mixed   { background:#3c2e1a; color:#d29922; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-family:'IBM Plex Mono',monospace; }
+    .finding-card strong { color: #1a1a2e; font-weight: 600; }
+
+    .stTabs [data-baseweb="tab-list"] { gap: 8px; border-bottom: 2px solid #e5e7eb; }
+    .stTabs [data-baseweb="tab"] { font-weight: 500; color: #6b7280; padding: 8px 16px; }
+    .stTabs [aria-selected="true"] { color: #2563eb !important; }
+
+    .filter-label {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.68rem;
+        color: #2563eb;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 500;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -97,26 +104,39 @@ def load_data():
 
 df = load_data()
 
-# AR columns
 ar_cols = [c for c in df.columns if c.startswith("AR_day_")]
 ar_days  = sorted([int(c.replace("AR_day_","").replace("+","")) for c in ar_cols])
 
 FIRM_COLORS = {
-    "TSM":       "#58a6ff",
-    "AAPL":      "#3fb950",
-    "NVDA":      "#d29922",
-    "AMD":       "#f85149",
-    "005930.KS": "#bc8cff",
-    "GOOG":      "#79c0ff",
+    "TSM":       "#2563eb",
+    "AAPL":      "#16a34a",
+    "NVDA":      "#d97706",
+    "AMD":       "#dc2626",
+    "005930.KS": "#7c3aed",
+    "GOOG":      "#0891b2",
 }
 DIR_COLORS = {
-    "relief":     "#3fb950",
-    "tightening": "#f85149",
-    "mixed":      "#d29922",
+    "relief":     "#16a34a",
+    "tightening": "#dc2626",
+    "mixed":      "#d97706",
 }
 
+CHART_BG   = "#ffffff"
+GRID_COLOR = "#f3f4f6"
+FONT_COLOR = "#374151"
+
+def light_layout(**kwargs):
+    base = dict(
+        paper_bgcolor=CHART_BG,
+        plot_bgcolor=CHART_BG,
+        font=dict(family="Inter", color=FONT_COLOR, size=12),
+        margin=dict(l=20, r=20, t=30, b=20),
+    )
+    base.update(kwargs)
+    return base
+
 # ---- SIDEBAR ------------------------------------------------
-st.sidebar.markdown('<p style="font-family:IBM Plex Mono;font-size:0.7rem;color:#58a6ff;letter-spacing:0.1em;text-transform:uppercase;">Filters</p>', unsafe_allow_html=True)
+st.sidebar.markdown('<p class="filter-label">Filters</p>', unsafe_allow_html=True)
 
 all_tickers  = sorted(df['ticker'].unique())
 all_dirs     = sorted(df['direction'].unique())
@@ -129,7 +149,6 @@ sel_doctypes = st.sidebar.multiselect("Document Type", all_doctypes, default=all
 year_min, year_max = int(df['year'].min()), int(df['year'].max())
 sel_years = st.sidebar.slider("Year Range", year_min, year_max, (year_min, year_max))
 
-# Apply filters
 mask = (
     df['ticker'].isin(sel_tickers) &
     df['direction'].isin(sel_dirs) &
@@ -139,14 +158,19 @@ mask = (
 fdf = df[mask].copy()
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(f'<p style="font-family:IBM Plex Mono;font-size:0.72rem;color:#8b949e;">{len(fdf)} observations<br>{fdf["event_id"].nunique()} events<br>{fdf["ticker"].nunique()} firms</p>', unsafe_allow_html=True)
+st.sidebar.markdown(
+    f'<p style="font-size:0.82rem;color:#6b7280;">'
+    f'<b>{len(fdf)}</b> observations &nbsp;·&nbsp; '
+    f'<b>{fdf["event_id"].nunique()}</b> events &nbsp;·&nbsp; '
+    f'<b>{fdf["ticker"].nunique()}</b> firms</p>',
+    unsafe_allow_html=True
+)
 
 # ---- HEADER -------------------------------------------------
 st.markdown('<p class="big-title">Trade Policy Shocks & Semiconductor Markets</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Event study analysis of USTR Section 301 tariff announcements · 2018–2020 · 43 events · 6 firms</p>', unsafe_allow_html=True)
 
-# ---- NAVIGATION TABS ----------------------------------------
-tab1, tab2, tab3 = st.tabs(["📈  Event Explorer", "🏢  Firm Comparison", "📋  Key Findings"])
+tab1, tab2, tab3 = st.tabs(["Event Explorer", "Firm Comparison", "Key Findings"])
 
 # ============================================================
 # TAB 1 — EVENT EXPLORER
@@ -167,45 +191,38 @@ with tab1:
 
     st.markdown('<p class="section-header">Average AR by Day Relative to Event (Event Window)</p>', unsafe_allow_html=True)
 
-    # Build AR time series by direction
     ar_data = []
     for direction in sel_dirs:
         sub = fdf[fdf['direction'] == direction]
         for day in ar_days:
             col = f"AR_day_{day:+d}"
             if col in sub.columns:
-                mean_ar = sub[col].mean()
-                ar_data.append({"day": day, "direction": direction, "mean_ar": mean_ar})
+                ar_data.append({"day": day, "direction": direction, "mean_ar": sub[col].mean()})
 
     if ar_data:
         ar_df = pd.DataFrame(ar_data)
         fig_ar = go.Figure()
-
         for direction in sel_dirs:
             sub = ar_df[ar_df['direction'] == direction]
             fig_ar.add_trace(go.Scatter(
                 x=sub['day'], y=sub['mean_ar'],
                 mode='lines+markers',
                 name=direction.capitalize(),
-                line=dict(color=DIR_COLORS.get(direction, "#8b949e"), width=2),
-                marker=dict(size=6),
+                line=dict(color=DIR_COLORS.get(direction, "#6b7280"), width=2.5),
+                marker=dict(size=7),
             ))
-
-        fig_ar.add_vline(x=0, line_dash="dash", line_color="#8b949e", opacity=0.5,
-                         annotation_text="Event Date", annotation_position="top right")
-        fig_ar.add_hline(y=0, line_color="#30363d", opacity=0.5)
-
-        fig_ar.update_layout(
-            paper_bgcolor="#0d1117", plot_bgcolor="#0d1117",
-            font=dict(family="IBM Plex Mono", color="#8b949e", size=11),
-            xaxis=dict(title="Trading Days Relative to Event", gridcolor="#21262d", zeroline=False,
-                       tickvals=list(range(-5, 6))),
-            yaxis=dict(title="Average Abnormal Return", gridcolor="#21262d", zeroline=False,
-                       tickformat=".1%"),
-            legend=dict(bgcolor="#161b22", bordercolor="#30363d", borderwidth=1),
+        fig_ar.add_vline(x=0, line_dash="dash", line_color="#9ca3af", opacity=0.7,
+                         annotation_text="Event Date", annotation_position="top right",
+                         annotation_font_color="#6b7280")
+        fig_ar.add_hline(y=0, line_color="#e5e7eb")
+        fig_ar.update_layout(**light_layout(
+            xaxis=dict(title="Trading Days Relative to Event", gridcolor=GRID_COLOR,
+                       zeroline=False, tickvals=list(range(-5, 6))),
+            yaxis=dict(title="Average Abnormal Return", gridcolor=GRID_COLOR,
+                       zeroline=False, tickformat=".1%"),
+            legend=dict(bgcolor="#ffffff", bordercolor="#e5e7eb", borderwidth=1),
             height=380,
-            margin=dict(l=20, r=20, t=20, b=20),
-        )
+        ))
         st.plotly_chart(fig_ar, use_container_width=True)
 
     st.markdown('<p class="section-header">CAR Distribution by Direction</p>', unsafe_allow_html=True)
@@ -216,21 +233,17 @@ with tab1:
         fig_box.add_trace(go.Box(
             y=sub['CAR'],
             name=direction.capitalize(),
-            marker_color=DIR_COLORS.get(direction, "#8b949e"),
-            line_color=DIR_COLORS.get(direction, "#8b949e"),
-            fillcolor=DIR_COLORS.get(direction, "#8b949e"),
-            opacity=0.3,
+            marker_color=DIR_COLORS.get(direction, "#6b7280"),
+            line_color=DIR_COLORS.get(direction, "#6b7280"),
+            fillcolor=DIR_COLORS.get(direction, "#6b7280"),
+            opacity=0.25,
         ))
-
-    fig_box.update_layout(
-        paper_bgcolor="#0d1117", plot_bgcolor="#0d1117",
-        font=dict(family="IBM Plex Mono", color="#8b949e", size=11),
-        yaxis=dict(title="CAR ([-5,+5] window)", gridcolor="#21262d", tickformat=".1%"),
-        xaxis=dict(gridcolor="#21262d"),
+    fig_box.update_layout(**light_layout(
+        yaxis=dict(title="CAR ([-5,+5] window)", gridcolor=GRID_COLOR, tickformat=".1%"),
+        xaxis=dict(gridcolor=GRID_COLOR),
         height=340,
-        margin=dict(l=20, r=20, t=20, b=20),
         showlegend=False,
-    )
+    ))
     st.plotly_chart(fig_box, use_container_width=True)
 
 # ============================================================
@@ -240,22 +253,18 @@ with tab2:
     st.markdown('<p class="section-header">Average CAR by Firm and Direction</p>', unsafe_allow_html=True)
 
     firm_dir = fdf.groupby(['firm_name', 'direction'])['CAR'].mean().reset_index()
-
     fig_firm = px.bar(
         firm_dir, x='firm_name', y='CAR', color='direction',
         barmode='group',
         color_discrete_map=DIR_COLORS,
         labels={'CAR': 'Average CAR', 'firm_name': 'Firm', 'direction': 'Direction'},
     )
-    fig_firm.update_layout(
-        paper_bgcolor="#0d1117", plot_bgcolor="#0d1117",
-        font=dict(family="IBM Plex Mono", color="#8b949e", size=11),
-        yaxis=dict(gridcolor="#21262d", tickformat=".1%"),
-        xaxis=dict(gridcolor="#21262d"),
-        legend=dict(bgcolor="#161b22", bordercolor="#30363d", borderwidth=1),
+    fig_firm.update_layout(**light_layout(
+        yaxis=dict(gridcolor=GRID_COLOR, tickformat=".1%"),
+        xaxis=dict(gridcolor=GRID_COLOR),
+        legend=dict(bgcolor="#ffffff", bordercolor="#e5e7eb", borderwidth=1),
         height=380,
-        margin=dict(l=20, r=20, t=20, b=20),
-    )
+    ))
     st.plotly_chart(fig_firm, use_container_width=True)
 
     st.markdown('<p class="section-header">Average AR Through Event Window by Firm</p>', unsafe_allow_html=True)
@@ -267,8 +276,7 @@ with tab2:
             col = f"AR_day_{day:+d}"
             if col in sub.columns:
                 firm_ar_data.append({
-                    "day": day,
-                    "ticker": ticker,
+                    "day": day, "ticker": ticker,
                     "firm": sub['firm_name'].iloc[0] if len(sub) > 0 else ticker,
                     "mean_ar": sub[col].mean()
                 })
@@ -276,33 +284,26 @@ with tab2:
     if firm_ar_data:
         firm_ar_df = pd.DataFrame(firm_ar_data)
         fig_firm_ar = go.Figure()
-
         for ticker in sel_tickers:
             sub = firm_ar_df[firm_ar_df['ticker'] == ticker]
             if len(sub) == 0:
                 continue
-            firm_name = sub['firm'].iloc[0]
             fig_firm_ar.add_trace(go.Scatter(
                 x=sub['day'], y=sub['mean_ar'],
                 mode='lines+markers',
-                name=firm_name,
-                line=dict(color=FIRM_COLORS.get(ticker, "#8b949e"), width=2),
-                marker=dict(size=5),
+                name=sub['firm'].iloc[0],
+                line=dict(color=FIRM_COLORS.get(ticker, "#6b7280"), width=2),
+                marker=dict(size=6),
             ))
-
-        fig_firm_ar.add_vline(x=0, line_dash="dash", line_color="#8b949e", opacity=0.4)
-        fig_firm_ar.add_hline(y=0, line_color="#30363d", opacity=0.5)
-
-        fig_firm_ar.update_layout(
-            paper_bgcolor="#0d1117", plot_bgcolor="#0d1117",
-            font=dict(family="IBM Plex Mono", color="#8b949e", size=11),
-            xaxis=dict(title="Trading Days Relative to Event", gridcolor="#21262d",
+        fig_firm_ar.add_vline(x=0, line_dash="dash", line_color="#9ca3af", opacity=0.6)
+        fig_firm_ar.add_hline(y=0, line_color="#e5e7eb")
+        fig_firm_ar.update_layout(**light_layout(
+            xaxis=dict(title="Trading Days Relative to Event", gridcolor=GRID_COLOR,
                        tickvals=list(range(-5, 6))),
-            yaxis=dict(title="Average Abnormal Return", gridcolor="#21262d", tickformat=".1%"),
-            legend=dict(bgcolor="#161b22", bordercolor="#30363d", borderwidth=1),
+            yaxis=dict(title="Average Abnormal Return", gridcolor=GRID_COLOR, tickformat=".1%"),
+            legend=dict(bgcolor="#ffffff", bordercolor="#e5e7eb", borderwidth=1),
             height=400,
-            margin=dict(l=20, r=20, t=20, b=20),
-        )
+        ))
         st.plotly_chart(fig_firm_ar, use_container_width=True)
 
     st.markdown('<p class="section-header">Beta Coefficients by Firm (Market Sensitivity)</p>', unsafe_allow_html=True)
@@ -311,20 +312,18 @@ with tab2:
     fig_beta = go.Figure(go.Bar(
         x=beta_df['beta'], y=beta_df['firm_name'],
         orientation='h',
-        marker_color="#58a6ff",
-        marker_line_color="#30363d",
+        marker_color="#2563eb",
+        marker_line_color="#e5e7eb",
         marker_line_width=1,
     ))
-    fig_beta.add_vline(x=1, line_dash="dash", line_color="#8b949e", opacity=0.5,
-                       annotation_text="Market β=1", annotation_position="top right")
-    fig_beta.update_layout(
-        paper_bgcolor="#0d1117", plot_bgcolor="#0d1117",
-        font=dict(family="IBM Plex Mono", color="#8b949e", size=11),
-        xaxis=dict(title="Average Beta (market sensitivity)", gridcolor="#21262d"),
-        yaxis=dict(gridcolor="#21262d"),
+    fig_beta.add_vline(x=1, line_dash="dash", line_color="#9ca3af", opacity=0.7,
+                       annotation_text="Market β=1", annotation_position="top right",
+                       annotation_font_color="#6b7280")
+    fig_beta.update_layout(**light_layout(
+        xaxis=dict(title="Average Beta (market sensitivity)", gridcolor=GRID_COLOR),
+        yaxis=dict(gridcolor=GRID_COLOR),
         height=280,
-        margin=dict(l=20, r=20, t=20, b=20),
-    )
+    ))
     st.plotly_chart(fig_beta, use_container_width=True)
 
 # ============================================================
@@ -348,31 +347,30 @@ with tab3:
                   delta="Near zero — clarity > direction")
 
     st.markdown('<p class="section-header">Key Findings</p>', unsafe_allow_html=True)
-
     st.markdown("""
     <div class="finding-card">
         <strong>Finding 1 — Relief announcements consistently generate positive abnormal returns.</strong><br>
-        Across all model specifications and firm subsets, relief events produce avg CAR of +1.47%. 
-        This is statistically consistent with the hypothesis that market participants respond positively 
+        Across all model specifications and firm subsets, relief events produce avg CAR of +1.47%.
+        This is statistically consistent with the hypothesis that market participants respond positively
         to reductions in trade policy uncertainty.
     </div>
     <div class="finding-card">
         <strong>Finding 2 — Information clarity dominates severity and direction.</strong><br>
-        Both relief and tightening announcements resolve uncertainty, while mixed announcements 
-        introduce it. The avg CAR for mixed events (-4.03%) is the most negative — suggesting markets 
+        Both relief and tightening announcements resolve uncertainty, while mixed announcements
+        introduce it. The avg CAR for mixed events (−4.03%) is the most negative — suggesting markets
         penalize ambiguity more than they fear restrictive policy.
     </div>
     <div class="finding-card">
         <strong>Finding 3 — Heterogeneity across sectors.</strong><br>
-        NVIDIA (β=1.81) and AMD (β=1.45) exhibit the highest market sensitivity, consistent with 
-        their heavier exposure to semiconductor supply chain disruptions. Samsung (β=0.28) shows 
+        NVIDIA (β=1.81) and AMD (β=1.45) exhibit the highest market sensitivity, consistent with
+        their heavier exposure to semiconductor supply chain disruptions. Samsung (β=0.28) shows
         lower sensitivity, reflecting its more diversified revenue base.
     </div>
     <div class="finding-card">
         <strong>Finding 4 — LLM classification pipeline rebuilt and validated.</strong><br>
-        The original Ollama-based classification failed due to an unsupported API parameter 
-        (response_format). This project rebuilds the pipeline using the Gemini API with the 
-        identical prompt methodology, producing working severity, surprise and direction scores 
+        The original Ollama-based classification failed due to an unsupported API parameter
+        (response_format). This project rebuilds the pipeline using the Gemini API with the
+        identical prompt methodology, producing working severity, surprise and direction scores
         for all 43 events.
     </div>
     """, unsafe_allow_html=True)
@@ -384,12 +382,7 @@ with tab3:
     summary['Mean CAR'] = (summary['Mean CAR']*100).round(3).astype(str) + '%'
     summary['Std Dev']  = (summary['Std Dev']*100).round(3).astype(str) + '%'
     summary['Direction'] = summary['Direction'].str.capitalize()
-
-    st.dataframe(
-        summary,
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.dataframe(summary, use_container_width=True, hide_index=True)
 
     st.markdown('<p class="section-header">Methodology</p>', unsafe_allow_html=True)
     st.markdown("""
@@ -405,7 +398,7 @@ with tab3:
 # ---- FOOTER -------------------------------------------------
 st.markdown("---")
 st.markdown(
-    '<p style="font-family:IBM Plex Mono;font-size:0.7rem;color:#8b949e;text-align:center;">'
+    '<p style="font-family:IBM Plex Mono;font-size:0.7rem;color:#9ca3af;text-align:center;">'
     'Trade Policy Event Study · BUS244 · Brandeis International Business School · 2025'
     '</p>',
     unsafe_allow_html=True

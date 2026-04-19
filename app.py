@@ -366,8 +366,8 @@ with tab3:
     </div>
     <div class="finding-card">
         <strong>Finding 3 — Heterogeneity across sectors.</strong><br>
-        NVIDIA (β=1.81) and AMD (β=1.45) exhibit the highest market sensitivity, consistent with
-        their heavier exposure to semiconductor supply chain disruptions. Samsung (β=0.28) shows
+        AMD (β=1.96) and NVIDIA (β=1.91) exhibit the highest market sensitivity, consistent with
+        their heavier exposure to semiconductor supply chain disruptions. Samsung (β=0.22) shows
         lower sensitivity, reflecting its more diversified revenue base.
     </div>
     <div class="finding-card">

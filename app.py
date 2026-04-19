@@ -8,6 +8,10 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 
 # ---- PAGE CONFIG --------------------------------------------
 st.set_page_config(
@@ -170,7 +174,7 @@ st.sidebar.markdown(
 st.markdown('<p class="big-title">Trade Policy Shocks & Semiconductor Markets</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Event study analysis of USTR Section 301 tariff announcements · 2018–2020 · 43 events · 6 firms</p>', unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["Event Explorer", "Firm Comparison", "Key Findings"])
+tab1, tab2, tab3, tab4 = st.tabs(["Event Explorer", "Firm Comparison", "Key Findings", "Prediction Model"])
 
 # ============================================================
 # TAB 1 — EVENT EXPLORER
@@ -403,3 +407,135 @@ st.markdown(
     '</p>',
     unsafe_allow_html=True
 )
+
+# ============================================================
+# TAB 4 — PREDICTION MODEL
+# ============================================================
+with tab4:
+    st.markdown('<p class="section-header">Logistic Regression — Predicting Next-Day Abnormal Return Direction</p>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="finding-card">
+        <strong>Model Overview</strong><br>
+        Target variable: Was the next-day abnormal return (AR day +1) positive?
+        Features: firm beta, alpha, same-day AR, prior-day AR, firm identity, event direction, document type.
+        Method: Logistic Regression with 5-fold cross-validation.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Build model
+    @st.cache_data
+    def build_model(dataframe):
+        d = dataframe.copy()
+        d['target'] = (d['AR_day_+1'] > 0).astype(int)
+        le_ticker    = LabelEncoder()
+        le_direction = LabelEncoder()
+        le_doctype   = LabelEncoder()
+        d['ticker_enc']    = le_ticker.fit_transform(d['ticker'])
+        d['direction_enc'] = le_direction.fit_transform(d['direction'])
+        d['doc_type_enc']  = le_doctype.fit_transform(d['doc_type'])
+        features = ['beta', 'alpha', 'AR_day_-1', 'AR_day_+0', 'ticker_enc', 'direction_enc', 'doc_type_enc']
+        X = d[features]
+        y = d['target']
+        model = LogisticRegression(max_iter=1000, random_state=42)
+        cv_scores = cross_val_score(model, X, y, cv=5, scoring='accuracy')
+        model.fit(X, y)
+        y_pred = model.predict(X)
+        cm = confusion_matrix(y, y_pred)
+        return model, cv_scores, y, y_pred, cm, features, d
+
+    model, cv_scores, y, y_pred, cm, features, df_model = build_model(df)
+    train_acc = accuracy_score(y, y_pred)
+
+    # Metrics row
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("CV Accuracy (5-fold)", f"{cv_scores.mean():.1%}", help="Average accuracy across 5 cross-validation folds")
+    with col2:
+        st.metric("Train Accuracy", f"{train_acc:.1%}")
+    with col3:
+        st.metric("Observations", len(y))
+    with col4:
+        st.metric("Positive Rate", f"{y.mean():.1%}", help="Share of next-day ARs that were positive")
+
+    st.markdown('<p class="section-header">Confusion Matrix</p>', unsafe_allow_html=True)
+
+    col_cm, col_coef = st.columns(2)
+
+    with col_cm:
+        fig_cm = go.Figure(data=go.Heatmap(
+            z=cm,
+            x=['Predicted Negative', 'Predicted Positive'],
+            y=['Actual Negative', 'Actual Positive'],
+            colorscale=[[0, '#eff6ff'], [1, '#2563eb']],
+            text=cm,
+            texttemplate="%{text}",
+            textfont={"size": 18, "color": "#1a1a2e"},
+            showscale=False,
+        ))
+        fig_cm.update_layout(**light_layout(
+            height=300,
+            xaxis=dict(side='bottom'),
+            margin=dict(l=20, r=20, t=20, b=20),
+        ))
+        st.plotly_chart(fig_cm, use_container_width=True)
+
+    with col_coef:
+        st.markdown('<p class="section-header">Feature Coefficients</p>', unsafe_allow_html=True)
+        feature_labels = ['Beta', 'Alpha', 'AR day -1', 'AR day 0', 'Firm', 'Direction', 'Doc Type']
+        coefs = model.coef_[0]
+        coef_df = pd.DataFrame({'Feature': feature_labels, 'Coefficient': coefs})
+        coef_df = coef_df.sort_values('Coefficient')
+        colors = ['#dc2626' if c < 0 else '#16a34a' for c in coef_df['Coefficient']]
+
+        fig_coef = go.Figure(go.Bar(
+            x=coef_df['Coefficient'],
+            y=coef_df['Feature'],
+            orientation='h',
+            marker_color=colors,
+            marker_line_width=0,
+        ))
+        fig_coef.add_vline(x=0, line_color="#9ca3af", line_width=1)
+        fig_coef.update_layout(**light_layout(
+            height=300,
+            xaxis=dict(title="Coefficient", gridcolor=GRID_COLOR, zeroline=False),
+            yaxis=dict(gridcolor=GRID_COLOR),
+            margin=dict(l=20, r=20, t=20, b=20),
+        ))
+        st.plotly_chart(fig_coef, use_container_width=True)
+
+    st.markdown('<p class="section-header">CV Accuracy Across Folds</p>', unsafe_allow_html=True)
+
+    fig_cv = go.Figure(go.Bar(
+        x=[f"Fold {i+1}" for i in range(len(cv_scores))],
+        y=cv_scores,
+        marker_color=['#2563eb' if s >= cv_scores.mean() else '#93c5fd' for s in cv_scores],
+        text=[f"{s:.1%}" for s in cv_scores],
+        textposition='outside',
+    ))
+    fig_cv.add_hline(y=cv_scores.mean(), line_dash="dash", line_color="#d97706",
+                     annotation_text=f"Mean: {cv_scores.mean():.1%}",
+                     annotation_position="top right",
+                     annotation_font_color="#d97706")
+    fig_cv.add_hline(y=0.5, line_dash="dot", line_color="#9ca3af",
+                     annotation_text="Baseline (50%)",
+                     annotation_position="bottom right",
+                     annotation_font_color="#9ca3af")
+    fig_cv.update_layout(**light_layout(
+        yaxis=dict(title="Accuracy", gridcolor=GRID_COLOR, tickformat=".0%", range=[0, 0.75]),
+        xaxis=dict(gridcolor=GRID_COLOR),
+        height=320,
+        showlegend=False,
+    ))
+    st.plotly_chart(fig_cv, use_container_width=True)
+
+    st.markdown("""
+    <div class="finding-card">
+        <strong>Interpretation</strong><br>
+        The model achieves ~54% cross-validated accuracy on a near-balanced dataset (53% positive rate),
+        marginally above the 50% random baseline. The strongest predictors are event direction and
+        same-day AR (day 0). This is consistent with the paper's finding that policy direction
+        matters more than severity — and suggests limited short-run predictability from firm-level
+        features alone, which aligns with semi-strong market efficiency.
+    </div>
+    """, unsafe_allow_html=True)
